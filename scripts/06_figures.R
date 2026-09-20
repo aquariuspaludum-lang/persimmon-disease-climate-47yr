@@ -74,9 +74,24 @@ make_fig2a <- function(point_col, line_col) {
     theme_classic(base_size = 12)
 }
 make_fig2b <- function(point_col, line_col) {
-  ggplot(fig2a_data, aes(x = annual_mean_temp, y = Powdery_mildew_mean)) +
+  # Linear fit (as in the Pearson analysis); the fitted line and 95% CI band are
+  # displayed only for incidence >= 0%, because incidence cannot be negative.
+  # This affects the display only, not the statistics.
+  dat_b  <- fig2a_data[!is.na(fig2a_data$Powdery_mildew_mean), ]
+  fit_b  <- lm(Powdery_mildew_mean ~ annual_mean_temp, data = dat_b)
+  grid_b <- data.frame(annual_mean_temp = seq(min(dat_b$annual_mean_temp),
+                                              max(dat_b$annual_mean_temp), length.out = 200))
+  pred_b <- cbind(grid_b, as.data.frame(predict(fit_b, grid_b, interval = "confidence")))
+  pred_b$lwr <- pmax(pred_b$lwr, 0)
+  pred_b$upr <- pmax(pred_b$upr, 0)
+  line_b <- pred_b[pred_b$fit >= 0, ]
+  ggplot(dat_b, aes(x = annual_mean_temp, y = Powdery_mildew_mean)) +
+    geom_ribbon(data = pred_b, aes(x = annual_mean_temp, ymin = lwr, ymax = upr),
+                inherit.aes = FALSE, fill = "grey60", alpha = 0.4) +
     geom_point(color = point_col, size = 2) +
-    geom_smooth(method = "lm", color = line_col, se = TRUE) +
+    geom_line(data = line_b, aes(x = annual_mean_temp, y = fit),
+              inherit.aes = FALSE, color = line_col, linewidth = 1) +
+    scale_y_continuous(limits = c(0, NA)) +
     labs(x = "Annual mean temperature (\u00b0C)", y = "Powdery mildew incidence (%)") +
     theme_classic(base_size = 12)
 }

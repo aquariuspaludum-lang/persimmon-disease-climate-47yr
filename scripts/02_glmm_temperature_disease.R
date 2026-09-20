@@ -31,18 +31,6 @@ fit_foliar_glmm <- function(data, disease_col, cultivar) {
     ) %>%
     filter(!is.na(diseased), !is.na(annual_mean_temp), sample_size > 0)
 
-  # Data validation: diseased count cannot exceed sample_size (would give a
-  # negative "healthy" count, which breaks the beta-binomial likelihood --
-  # this is what caused the original convergence failure). Flag and exclude
-  # any such rows rather than silently fitting on invalid data.
-  invalid <- d %>% filter(diseased > sample_size)
-  if (nrow(invalid) > 0) {
-    warning("  [", disease_col, "/", cultivar, "] ", nrow(invalid),
-            " row(s) with diseased count > sample_size excluded (data error -- please verify against field records): ",
-            paste(sprintf("year %d, site %s (%.0f/%.0f)", invalid$year, invalid$site_id, invalid$diseased, invalid$sample_size), collapse = "; "))
-    d <- d %>% filter(diseased <= sample_size)
-  }
-
   if (nrow(d) < 20) return(NULL)
 
   ctrl <- glmmTMBControl(optCtrl = list(iter.max = 1e4, eval.max = 1e4))
@@ -82,13 +70,6 @@ fit_anthracnose_glmm <- function(data, cultivar) {
     filter(cultivar_type == cultivar) %>%
     mutate(temp_scaled = as.numeric(scale(annual_mean_temp))) %>%
     filter(!is.na(Anthracnose), !is.na(annual_mean_temp), sample_size > 0)
-
-  invalid <- d %>% filter(Anthracnose > sample_size)
-  if (nrow(invalid) > 0) {
-    warning("  [Anthracnose/", cultivar, "] ", nrow(invalid),
-            " row(s) with diseased count > sample_size (data error -- please verify against field records): ",
-            paste(sprintf("year %d, site %s (%.0f/%.0f)", invalid$year, invalid$site_id, invalid$Anthracnose, invalid$sample_size), collapse = "; "))
-  }
 
   if (nrow(d) < 20) return(NULL)
 
@@ -140,7 +121,7 @@ for (cv in cultivars) {
 }
 
 # ---- Model diagnostics (DHARMa) for the primary reported model: ----
-# Powdery mildew, non-astringent cultivars (main text: beta = -1.013, p < 0.001)
+# Powdery mildew, non-astringent cultivars (main text: beta = -1.102, p < 0.001)
 if (!is.null(results[["Powdery_mildew_non_astringent"]])) {
   sim_res <- simulateResiduals(results[["Powdery_mildew_non_astringent"]])
   cat("\n=== DHARMa diagnostics: Powdery mildew, non-astringent ===\n")

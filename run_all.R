@@ -20,6 +20,7 @@ source("scripts/03_correlation_analysis.R")
 source("scripts/04_cultivar_comparison.R")
 source("scripts/05_ccf_fungicide_analysis.R")
 source("scripts/06_figures.R")
+source("scripts/07_table1_disease_statistics.R")
 
 cat("\n=============================================\n")
 cat("Full analysis pipeline complete.\n")

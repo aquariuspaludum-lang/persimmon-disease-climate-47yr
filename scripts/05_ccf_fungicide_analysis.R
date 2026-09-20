@@ -52,10 +52,13 @@ ccf_results <- do.call(rbind, ccf_table)
 rownames(ccf_results) <- NULL
 
 # Multiple-comparison correction: 4 diseases x 10 FRAC groups x 7 lags = 280
-# tests were run without correction, which risks a substantial number of
-# false positives (~14 expected by chance alone at alpha = 0.05). Apply both
-# Bonferroni (conservative, family-wise error rate) and Benjamini-Hochberg
-# (FDR, less conservative) corrections across all 280 tests together.
+# combinations were evaluated. Correlations cannot be computed when either
+# series is constant within the lagged window (p = NA): FRAC 7 and FRAC U13
+# were never applied (all zeros), and FRAC M1 is constant at some lags. These
+# combinations are excluded, and p.adjust() corrects over the remaining
+# non-NA tests (n_valid). Apply both Bonferroni (conservative, family-wise
+# error rate) and Benjamini-Hochberg (FDR, less conservative) corrections
+# across all valid tests together.
 ccf_results$p_bonferroni <- p.adjust(ccf_results$p_value, method = "bonferroni")
 ccf_results$p_fdr <- p.adjust(ccf_results$p_value, method = "BH")
 ccf_results$significant_uncorrected <- ccf_results$p_value < 0.05
@@ -63,7 +66,10 @@ ccf_results$significant_fdr <- ccf_results$p_fdr < 0.05
 ccf_results$significant_bonferroni <- ccf_results$p_bonferroni < 0.05
 
 cat("=== CCF associations: uncorrected vs. corrected significance ===\n")
-cat("Total tests:", nrow(ccf_results), " (NA r/p, e.g. from zero-variance FRAC series, excluded from counts below)\n")
+cat("Combinations evaluated:", nrow(ccf_results), "\n")
+cat("Combinations with NA p-value (constant series; excluded from correction):",
+    sum(is.na(ccf_results$p_value)), "\n")
+cat("Valid tests (correction family):", sum(!is.na(ccf_results$p_value)), "\n")
 cat("Significant at uncorrected p < 0.05:", sum(ccf_results$significant_uncorrected, na.rm = TRUE), "\n")
 cat("Significant after FDR (Benjamini-Hochberg) correction:", sum(ccf_results$significant_fdr, na.rm = TRUE), "\n")
 cat("Significant after Bonferroni correction:", sum(ccf_results$significant_bonferroni, na.rm = TRUE), "\n\n")

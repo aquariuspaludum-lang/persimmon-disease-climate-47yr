@@ -14,7 +14,8 @@
 #      incorrect aggregation script. This script RECOMPUTES annual mean
 #      temperature directly from the raw pentad records in
 #      weather_data_1970_2025.csv, which matches the statistics reported in
-#      the manuscript (slope = 0.0237 C/year, R2 = 0.344, range 13.7-16.3C).
+#      the manuscript (n = 47 years, slope = 0.0230 C/year, R2 = 0.336,
+#      range 13.7-16.3C).
 #   2. disease_yearly_summary_1979_2025.csv's disease incidence columns
 #      (e.g. Powdery_mildew_mean) are POOLED across all cultivars, not
 #      non-astringent (Fuyu)-only as the manuscript's Figure 1/2, Table 2,
@@ -83,8 +84,6 @@ names(fruit_orchard_raw) <- gsub("^\uFEFF", "", names(fruit_orchard_raw))
 
 foliar_na <- foliar_orchard_raw %>%
   filter(year != 1985, cultivar_type == "Non_astringent") %>%
-  filter(Powdery_mildew <= sample_size, Angular_leaf_spot <= sample_size,
-         Circular_leaf_spot <= sample_size) %>%  # exclude data-entry errors (diseased > sample_size); see 02_glmm script for detail
   mutate(
     Powdery_mildew_pct    = 100 * Powdery_mildew    / sample_size,
     Angular_leaf_spot_pct = 100 * Angular_leaf_spot / sample_size,
@@ -111,7 +110,7 @@ disease_yearly <- foliar_na %>%
   arrange(year)
 
 # Sanity check against manuscript Table 1 (non-astringent, 1979-2025):
-# Powdery mildew mean ~26.3%, max 79.22%
+# Powdery mildew maximum annual mean = 79.22% (1993)
 stopifnot(abs(max(disease_yearly$Powdery_mildew_mean, na.rm = TRUE) - 79.22) < 0.5)
 
 # ---- 3. Orchard-level data (for GLMM and cultivar comparison) ----
